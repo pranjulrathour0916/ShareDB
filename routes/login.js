@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
+const axios = require("axios");
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
-require('dotenv').config();
-const jwt = require('jsonwebtoken')
+require("dotenv").config();
+const jwt = require("jsonwebtoken");
 const { body, validationResult } = require("express-validator");
 
 router.post(
@@ -17,13 +18,12 @@ router.post(
   ],
   async (req, res) => {
     try {
-    
       const result = validationResult(req);
       if (!result.isEmpty()) {
         return res.status(400).json({ errors: result.array() });
-    }
-    const {name, email, password} = req.body;
-     const checkUser = await User.findOne({ email });
+      }
+      const { name, email, password } = req.body;
+      const checkUser = await User.findOne({ email });
       if (checkUser) {
         return res.status(400).json("This email already exist");
       }
@@ -33,9 +33,19 @@ router.post(
       const createUser = await User.create({
         name,
         email,
-        password : hashPassword
+        password: hashPassword,
       });
       res.json(createUser);
+
+      await axios.post("http://localhost:5000/api/webhook", {
+        event: "user_created",
+        data: {
+          id: createUser._id,
+          name: createUser.name,
+          email: createUser.email,
+          createdAt: createUser.createdAt,
+        },
+      });
     } catch (error) {
       console.error("Error creating user:", error.message);
       res.status(500).json({ error: "Internal Server Error" });
@@ -50,36 +60,41 @@ router.post(
     body("password", "Incorrect credentials").isLength({ min: "5" }),
   ],
   async (req, res) => {
-   try {
-    const result = validationResult(req)
-    if(!result.isEmpty())
-    {
-      return res.status(400).json({errors : result.array()});
-    }
-     const {email, password} = req.body;
-    const findUser = await User.findOne({email});
-    if(!findUser)
-    {
-      return res.status(400).json("Incorrect credentials")
-    }
-    const checkPass = await bcrypt.compare(password, findUser.password);
-    if(!checkPass)
-    {
-      return res.status(400).json("Incorrect credentials")
-    }
-    const payload = {
-      user : {
-        id : findUser._id,
-        email : email
+    try {
+      const result = validationResult(req);
+      if (!result.isEmpty()) {
+        return res.status(400).json({ errors: result.array() });
       }
+      const { email, password } = req.body;
+      const findUser = await User.findOne({ email });
+      if (!findUser) {
+        return res.status(400).json("Incorrect credentials");
+      }
+      const checkPass = await bcrypt.compare(password, findUser.password);
+      if (!checkPass) {
+        return res.status(400).json("Incorrect credentials");
+      }
+      const payload = {
+        user: {
+          id: findUser._id,
+          email: email,
+        },
+      };
+      const token = jwt.sign(payload, process.env.JWT_TOKEN);
+      res.status(200).json(token);
+      await axios.post("http://localhost:5000/api/webhook", {
+        event: "login_Success",
+        data: {
+          id: findUser._id,
+          name: findUser.name,
+          email: findUser.email,
+          createdAt: findUser.createdAt,
+        },
+      });
+    } catch (error) {
+      console.error("Error: ", error.message);
+      res.status(500).json("Internal server error");
     }
-    const token = jwt.sign(payload, process.env.JWT_TOKEN)
-    res.status(200).json(token)
-
-   } catch (error) {
-    console.error("Error: ", error.message);
-    res.status(500).json("Internal server error");
-   }
   }
 );
 
