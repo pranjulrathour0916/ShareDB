@@ -15,8 +15,14 @@ const PostSchema = new mongoose.Schema({
         required : true
     },
     image : {
-        type : mongoose.Schema.Types.ObjectId,
-        ref : 'img'
+        type : String,
+        // ref : 'img'
+    },
+    likes : {
+        type : Number
+    },
+    comments : {
+        type : String
     },
     logUser : {
         type : mongoose.Schema.Types.ObjectId,

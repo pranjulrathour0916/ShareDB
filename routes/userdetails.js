@@ -29,12 +29,12 @@ router.post("/createBlog", auth,[
         const result = validationResult(req);
         if(!result.isEmpty())
         {
-            return res.staus(400).json({errors : result.array()})
+            return res.status(400).json({errors : result.array()})
         }
-        const { title, desc } = req.body;
+        const { title, desc, image } = req.body;
         const newblog = await Post.create({
             "title" : title,
-            image : req.user.id,
+            image : image,
             "desc" : desc,
             logUser : req.user.id
         })
@@ -84,6 +84,17 @@ router.delete("/deleteBlog/:id", auth, async(req, res) =>{
   } catch (error) {
     console.error("Error : ", error.message);
     return res.status(500).json("Internal Server error");
+  }
+})
+
+// POST route for Comments and likes
+
+router.post("/cmtlike/:id", auth, async(req, res) => {
+  try {
+    const findPost = await Post.findByIdAndUpdate(req.params.id)
+    
+  } catch (error) {
+    
   }
 })
 
