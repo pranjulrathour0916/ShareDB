@@ -37,7 +37,7 @@ router.post(
       });
       res.json(createUser);
 
-      await axios.post("http://localhost:5000/api/webhook", {
+      await axios.post("http://localhost:5050/api/webhook", {
         event: "user_created",
         data: {
           id: createUser._id,
@@ -82,7 +82,7 @@ router.post(
       };
       const token = jwt.sign(payload, process.env.JWT_TOKEN);
       res.status(200).json(token);
-      await axios.post("http://localhost:5000/api/webhook", {
+      await axios.post("http://localhost:5050/api/webhook", {
         event: "login_Success",
         data: {
           id: findUser._id,
